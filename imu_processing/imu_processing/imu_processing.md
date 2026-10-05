@@ -18,34 +18,3 @@ IMU (ICM2094) takes in the raw acceleration data of *Gyro, Accelerometer, Magnet
 
 <img width="874" height="764" alt="image" src="https://github.com/user-attachments/assets/f334c5cb-b946-45ff-8cde-f3fecc1ae987" />
 
-## Designing my scope
-
-### Constants
-
-### PKGS:
-
-ImuLiveRawData()  - *Taking live Raw output data*
-  accelRawX
-  accelRawY
-  accelRawZ
-  
-  gyroRawX
-  gyroRawY
-  gyroRawZ
-
-  magRawX
-  magRawY
-  magRawZ
-  
-  
-  imuRawSubscriber() - *Receiving live data*
-  imuRawPublisher() - *Publishing live data from sensor input*
-    read_magnetometer_data()
-
-  imuPlotLiveData(input data X,Y,Z)
-
-  
-  
-
-# Kalman Filter ---
-
