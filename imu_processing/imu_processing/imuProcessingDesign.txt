@@ -1,0 +1,88 @@
+## Designing my scope
+
+### Constants
+
+### PKGS:
+
+
+ImuLiveRawData()  - *Taking live Raw output data*
+  accelRawX
+  accelRawY
+  accelRawZ
+  
+  gyroRawX
+  gyroRawY
+  gyroRawZ
+
+  magRawX
+  magRawY
+  magRawZ
+  
+  __self__()
+    self.imu = ICM20948() # Check the actual data... will need to input at smth like self.imu = icm20948.ICM20948(bus=1)
+
+    # Dont need a subscriber. self.imu essentially subscribes to the port
+
+    self.publisherAccelGyroRaw() #
+      imu.read_accelerometer_gyro_data()  #Imported func
+    self.publisherMagRaw() - *Publishing live data from sensor input*
+      read_magnetometer_data()  # Imported func
+
+    self.timer() # publish imu data / what I want it to do within this terminal
+------------------------
+
+
+=> ImuLiveData(Node)
+  self.imu = IMU()
+  self.functions = ImuFunctions()
+
+  publishGyroRaw()
+  publishAccelRaw()
+  publishMagRaw()
+
+  publishGyroCal(calibrate accel)
+
+  terminalPrintData()
+  terminalPlotDataRaw()
+  terminalPlotDataCal()
+
+
+
+ImuCollectCalibrationData:
+  # NO publishers or subscribers
+  accelBiasX
+  accelBiasY
+  accelBiasZ
+  ...
+
+  runImuCollections()
+  storeConstants() - output csv + constant
+
+ImuFunctions:
+  # NO publisher or subscribers, just output functions
+  self.calibrationConstants = ImuCollectCalibrationData()
+
+  calibrateAccel()
+  calibrateGyro()
+  calibrateMag()
+
+  plotData()
+
+------------------------------------------------------
+=> HeadingOrientation(Node)
+      self.heading = HeadingFunctions()
+
+      subscribeGyroCal()
+      subscribeAccelCal()
+      subscribeMagCal()
+    
+      terminalPrintData()
+      terminalPlotData()
+
+HeadingFunctions:
+  headingAccelGyro()
+  headingMag()
+
+-------------------------------------------------------
+
+# Kalman Filter ---
