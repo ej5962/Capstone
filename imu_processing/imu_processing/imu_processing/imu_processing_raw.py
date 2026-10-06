@@ -1,62 +1,51 @@
 #!/usr/bin/env python3
-
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import Imu
-from icm20948 import ICM20948
+#Ros 2 imports
+from sensor_msgs.msg import Imu, MagneticField     # Import the IMU message type
+from icm20948 import ICM20948       # Use the ICM-20948 library to read the IMU data
 
-import math
+# personal library imports
+from imu_pubplot_functions import ImuPubPlotFuncs
 
 
-class imu_processing_raw(Node):
+class imu_processing_raw(Node, ImuPubPlotFuncs):
 
     def __init__(self):
-        super().__init__("imu_publisher")
+        super().__init__("imu_processing_raw")
 
         # Create ICM-20948
         self.imu = ICM20948()
 
-        # ROS 2 publisher
-        self.publisher = self.create_publisher(Imu,"/imu/data_raw",10)
-        # Publish at 100 Hz
-        self.timer = self.create_timer(0.01, self.publish_imu)  
+        self.imu_pub = self.create_publisher(Imu,"/imu/data_raw",10)      # ROS 2 publisher
+        self.mag_pub = self.create_publisher(MagneticField, "/imu/mag", 10)
+        self.timer = self.create_timer(0.01, self.publish_imu)              # Publish at 100 Hz
+        self.print_count = 0
+
+        self.frame_id = "imu_link"      # Coordinate frame the IMU data is measured in
+
+        self.start_time = self.get_clock().now()
+        self.plots = []
+        self.create_plot(type="Raw")  # Create a plot for the raw data
 
         self.get_logger().info("ICM-20948 IMU publisher started")
 
     def publish_imu(self):
 
-        # Read the ICM-20948
-        accel, gyro = self.imu.read_accelerometer_gyro_data()
+        imu_msg, mag_msg = self.read_imu_data()  # Read the IMU data
 
-        # Create ROS IMU message
-        msg = Imu()
+        # # We are not calculating orientation yet
+        imu_msg.orientation_covariance[0] = -1.0
 
-        # ------------------------------------------------
-        # Accelerometer
-        # Library: g - gravity measurement. Multiply by 9.8 to get accleration in m/s^2
-        # ROS: m/s^2
-        # ------------------------------------------------
+        self.imu_pub.publish(imu_msg)
+        self.mag_pub.publish(mag_msg)
 
-        msg.linear_acceleration.x = accel[0] * 9.80665
-        msg.linear_acceleration.y = accel[1] * 9.80665
-        msg.linear_acceleration.z = accel[2] * 9.80665
+        a_raw = imu_msg.linear_acceleration
+        w_raw = imu_msg.angular_velocity
+        m_raw = mag_msg.magnetic_field
 
-        # ------------------------------------------------
-        # Gyroscope
-        # Library: degrees/second
-        # ROS: radians/second
-        # ------------------------------------------------
-
-        msg.angular_velocity.x = math.radians(gyro[0])
-        msg.angular_velocity.y = math.radians(gyro[1])
-        msg.angular_velocity.z = math.radians(gyro[2])
-
-        # We are not calculating orientation yet
-        msg.orientation_covariance[0] = -1.0
-
-        # Publish
-        self.publisher.publish(msg)
+        self.updatenprint_plots(a_raw, w_raw, m_raw, type="Raw")  # Update the plots and print the data every 50 samples
 
 
 def main(args=None):
@@ -75,6 +64,7 @@ def main(args=None):
 
     finally:
         # Clean up
+        node.close_plots()
         node.destroy_node()
         rclpy.shutdown()
 
