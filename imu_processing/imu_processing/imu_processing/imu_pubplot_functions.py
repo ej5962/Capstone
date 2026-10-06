@@ -7,7 +7,7 @@ import math
 from sensor_msgs.msg import Imu, MagneticField     # Import the IMU and magnetometer message types
 
 # personal library imports
-from imu_plot import ImuPlot
+from imu_plot import ImuPlotFunc
 
 
 class ImuPubPlotFuncs:
@@ -98,9 +98,9 @@ class ImuPubPlotFuncs:
 
     def create_plot(self, type = "Raw"):
         # Create a plot for the raw data
-        self.plot_accel = ImuPlot(title="IMU Accelerometer (" + type + ")", ylabel="Acceleration (m/s^2)")
-        self.plot_gyro = ImuPlot(title="IMU Gyroscope (" + type + ")", ylabel="Angular Velocity (rad/s)")
-        self.plot_mag = ImuPlot(title="IMU Magnetometer (" + type + ")", ylabel="Magnetic Field (uT)")
+        self.plot_accel = ImuPlotFunc(title="IMU Accelerometer (" + type + ")", ylabel="Acceleration (m/s^2)")
+        self.plot_gyro = ImuPlotFunc(title="IMU Gyroscope (" + type + ")", ylabel="Angular Velocity (rad/s)")
+        self.plot_mag = ImuPlotFunc(title="IMU Magnetometer (" + type + ")", ylabel="Magnetic Field (uT)")
 
         self.plots = [self.plot_accel, self.plot_gyro, self.plot_mag]
 
