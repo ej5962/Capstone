@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from collections import deque
 
 
-class ImuPlot:
+class ImuPlotFunc:
     def __init__(self, window=200, title="IMU *variable* Data Plot", ylabel="variable"):
         self.t = deque(maxlen=window)
         self.x_d = deque(maxlen=window)
