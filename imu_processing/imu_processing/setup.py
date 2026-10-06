@@ -22,13 +22,11 @@ setup(
             'pytest',
         ],
     },
-    entry_points={
+    entry_points={  # Only for nodes
         'console_scripts': [
             'imu_processing_raw = imu_processing.imu_processing_raw:main',
-            'imu_processing_fake = imu_processing.imu_processing_fake:main',
-            'imu_plot = imu_processing.imu_plot:main',
-            'imu_calibration_live = imu_processing.imu_calibration_live:main'
-            'imu_stationary_record = imu_processing.imu_stationary_record:main'
+            # 'imu_calibration_live = imu_processing.imu_calibration_live:main'
+            # 'imu_stationary_record = imu_processing.imu_stationary_record:main'
         ],
     },
 )

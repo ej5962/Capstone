@@ -1,140 +1,52 @@
-#!/usr/bin/env python3
-
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import Imu
-
 import matplotlib.pyplot as plt
 from collections import deque
 
 
-class imu_plot(Node):
+class ImuPlotFunc:
+    def __init__(self, window=200, title="IMU *variable* Data Plot", ylabel="variable"):
+        self.t = deque(maxlen=window)
+        self.x_d = deque(maxlen=window)
+        self.y_d = deque(maxlen=window)
+        self.z_d = deque(maxlen=window)
 
-    def __init__(self):
-        super().__init__("imu_plotter")
-
-        # Subscribe to the IMU topic
-        self.subscription = self.create_subscription(
-            Imu,
-            "/imu/data_raw",
-            self.imu_callback,
-            10
-        )
-
-        # Store the last 200 measurements
-        self.time_data = deque(maxlen=200)
-
-        self.accel_x = deque(maxlen=200)
-        self.accel_y = deque(maxlen=200)
-        self.accel_z = deque(maxlen=200)
-
-        self.gyro_x = deque(maxlen=200)
-        self.gyro_y = deque(maxlen=200)
-        self.gyro_z = deque(maxlen=200)
-
-        self.start_time = self.get_clock().now()
-
-        # Create plot
         plt.ion()
+        self.fig = plt.figure()    # Create a new window for this plot
 
-        self.fig, self.ax = plt.subplots()
+        # Create the three lines, label the axes, and add a title
+        self.line_x, = plt.plot([], [], label="X")
+        self.line_y, = plt.plot([], [], label="Y")
+        self.line_z, = plt.plot([], [], label="Z")
+        plt.xlabel("Time (s)")
+        plt.ylabel(ylabel)
 
-        self.accel_lines = self.ax.plot(
-            [], [], label="Accel X"
-        )[0]
+        plt.title(title)
+        plt.legend()
+        plt.grid(True)
 
-        self.accel_y_line = self.ax.plot(
-            [], [], label="Accel Y"
-        )[0]
+    def add_sample(self, t, x, y, z):
+        """Store one reading. Call this from your IMU callback."""
+        self.t.append(t)
+        self.x_d.append(x)
+        self.y_d.append(y)
+        self.z_d.append(z)
 
-        self.accel_z_line = self.ax.plot(
-            [], [], label="Accel Z"
-        )[0]
-
-        self.ax.set_xlabel("Time (seconds)")
-        self.ax.set_ylabel("Acceleration (m/s²)")
-        self.ax.set_title("Fake IMU Accelerometer")
-        self.ax.legend()
-        self.ax.grid(True)
-
-        # Update graph at 20 Hz
-        self.timer = self.create_timer(
-            0.05,
-            self.update_plot
-        )
-
-    def imu_callback(self, msg):
-
-        # Calculate elapsed time
-        current_time = self.get_clock().now()
-
-        elapsed_time = (
-            current_time - self.start_time
-        ).nanoseconds / 1e9
-
-        # Store time
-        self.time_data.append(elapsed_time)
-
-        # Store accelerometer data
-        self.accel_x.append(
-            msg.linear_acceleration.x
-        )
-
-        self.accel_y.append(
-            msg.linear_acceleration.y
-        )
-
-        self.accel_z.append(
-            msg.linear_acceleration.z
-        )
-
-    def update_plot(self):
-
-        if len(self.time_data) == 0:
+    def update(self):
+        """Redraw the plot. Call this from a timer, not every callback."""
+        if not self.t:
             return
 
-        # Update X axis data
-        self.accel_lines.set_data(
-            self.time_data,
-            self.accel_x
-        )
+        plt.figure(self.fig.number)    # Switch to this plot's window
 
-        self.accel_y_line.set_data(
-            self.time_data,
-            self.accel_y
-        )
+        self.line_x.set_data(self.t, self.x_d)
+        self.line_y.set_data(self.t, self.y_d)
+        self.line_z.set_data(self.t, self.z_d)
 
-        self.accel_z_line.set_data(
-            self.time_data,
-            self.accel_z
-        )
+        # Rescale to fit the new data
+        plt.gca().relim()
+        plt.gca().autoscale_view()
 
-        # Automatically adjust axes
-        self.ax.relim()
-        self.ax.autoscale_view()
-
-        # Redraw graph
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-
-def main(args=None):
-
-    rclpy.init(args=args)
-
-    node = imu_plot()
-
-    try:
-        rclpy.spin(node)
-
-    except KeyboardInterrupt:
-        pass
-
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()
-
+    def close(self):
+        plt.close(self.fig)
