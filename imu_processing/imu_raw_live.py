@@ -8,7 +8,7 @@ from sensor_msgs.msg import Imu, MagneticField     # Import the IMU message type
 from icm20948 import ICM20948       # Use the ICM-20948 library to read the IMU data
 
 # personal library imports
-from imu_processing.imu_processing.imu_processing.imu_pubplot_func import ImuPubPlotFuncs
+from imu_processing.imu_pubplot_func import ImuPubPlotFuncs
 
 class imu_processing_raw(Node, ImuPubPlotFuncs):
 

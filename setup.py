@@ -24,7 +24,7 @@ setup(
     },
     entry_points={  # Only for nodes
         'console_scripts': [
-            'imu_processing_raw = imu_processing.imu_processing_raw:main',
+            'imu_raw_live = imu_processing.imu_raw_live:main',
             # 'imu_calibration_live = imu_processing.imu_calibration_live:main'
             # 'imu_stationary_record = imu_processing.imu_stationary_record:main'
         ],

@@ -1,0 +1,16 @@
+* [33m19288f0[m[33m ([m[1;36mHEAD -> [m[1;32mV2[m[33m, [m[1;31morigin/V2[m[33m)[m Edit the func and incl heading calibration TBC
+* [33mb8bc20e[m Update V2 for LattePanda -Confirmed data collected
+* [33mb76575c[m remove extra nodes in setup
+* [33m9173806[m change func
+* [33mdd9dd09[m remove imu_processing_fake.py
+* [33m9410297[m Move IMU publish/plot helpers into imu_pubplot_functions, add .gitignore
+[31m|[m * [33m5139fb8[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update imu_processing.md
+[31m|[m[31m/[m  
+* [33m64e7c7d[m[33m ([m[1;32mmain[m[33m)[m Create imuProcessingDesign.txt
+* [33m300caad[m Update imu_processing.md
+* [33m150ceb0[m Update imu_processing.md to remove design sections
+* [33m5d1e0b7[m Enhance IMU Processing documentation
+* [33m149669b[m Update README.md
+* [33m9ab3da5[m Add files via upload
+* [33m43bfec3[m Add files via upload
+* [33m70a4df2[m Initial commit

@@ -4,7 +4,7 @@ import math
 import csv
 import os
 
-from imu_processing.imu_processing.imu_processing import imu_raw_live
+import imu_raw_live
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
