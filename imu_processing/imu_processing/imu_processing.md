@@ -10,7 +10,11 @@ IMU (ICM2094) takes in the raw acceleration data of *Gyro, Accelerometer, Magnet
 
 **Equations for Heading: Accelerometer + Gyro:** 
 
-<img width="746" height="752" alt="image" src="https://github.com/user-attachments/assets/bafb093b-e687-4d5b-a8b7-49d1990b6735" >
+<!-- <img width="746" height="752" alt="image" src="https://github.com/user-attachments/assets/bafb093b-e687-4d5b-a8b7-49d1990b6735" > -->
+Using relative heading:
+
+<img width="1474" height="338" alt="image" src="https://github.com/user-attachments/assets/3921ce45-5717-43be-ab83-2dd4d223ddb5" />
+
 
 **Equations for Heading: Magnetometer** 
 
