@@ -7,7 +7,7 @@ import math
 from sensor_msgs.msg import Imu, MagneticField     # Import the IMU and magnetometer message types
 
 # personal library imports
-from imu_processing.imu_plot import ImuPlotFunc
+from imu_processing.imu_plot_func import ImuPlotFunc
 
 
 class ImuPubPlotFuncs:

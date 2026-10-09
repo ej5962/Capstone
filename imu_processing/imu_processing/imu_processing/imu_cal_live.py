@@ -4,6 +4,7 @@ import math
 import csv
 import os
 
+from imu_processing.imu_processing.imu_processing import imu_raw_live
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
@@ -11,13 +12,12 @@ from sensor_msgs.msg import Imu
 from ament_index_python.packages import get_package_share_directory
 
 
-#
-
-
-class imu_calibration_live(Node):
+class imu_cal_live(Node):
 
     def __init__(self):
-        super().__init__("imu_calibration")
+        super().__init__("imu_cal")
+
+        self.get_raw_data = self.create_subscription(Imu, "/imu/data_raw", self.imu_callback_rawdata, 10)
 
         self.package_path = get_package_share_directory('imu_processing')       # Find imu_processing pkg  
         self.calibration_path = os.path.join(self.package_path, 'calibration')  # Find calibration folder with bias inside
@@ -76,7 +76,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Create node
-    node = imu_calibration_live()
+    node = imu_raw_live()
 
     try:
         # Keep node running

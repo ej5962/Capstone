@@ -8,12 +8,12 @@ from sensor_msgs.msg import Imu, MagneticField     # Import the IMU message type
 from icm20948 import ICM20948       # Use the ICM-20948 library to read the IMU data
 
 # personal library imports
-from imu_processing.imu_pubplot_functions import ImuPubPlotFuncs
+from imu_processing.imu_processing.imu_processing.imu_pubplot_func import ImuPubPlotFuncs
 
 class imu_processing_raw(Node, ImuPubPlotFuncs):
 
     def __init__(self):
-        super().__init__("imu_processing_raw")
+        super().__init__("imu_raw_live")
 
         # Create ICM-20948
         # self.imu = ICM20948()
@@ -26,10 +26,12 @@ class imu_processing_raw(Node, ImuPubPlotFuncs):
 
         self.imu_pub = self.create_publisher(Imu,"/imu/data_raw",10)      # ROS 2 publisher
         self.mag_pub = self.create_publisher(MagneticField, "/imu/mag", 10)
-        self.timer = self.create_timer(0.01, self.publish_imu)              # Publish at 100 Hz
+        # Publish at 100 Hz while data is collected at 125hz
+        self.timer = self.create_timer(0.01, self.publish_imu)
+
         self.print_count = 0
 
-        self.frame_id = "imu_link"      # Coordinate frame the IMU data is measured in
+        # self.frame_id = "imu_link"      # Coordinate frame the IMU data is measured in - I dont see where this is used in the code, but it is a standard ROS 2 parameter for IMU data
 
         self.start_time = self.get_clock().now()
         self.plots = []
