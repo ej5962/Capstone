@@ -7,7 +7,7 @@ import os
 import imu_raw_live
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, MagneticField
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -17,7 +17,9 @@ class imu_cal_live(Node):
     def __init__(self):
         super().__init__("imu_cal")
 
-        self.get_raw_data = self.create_subscription(Imu, "/imu/data_raw", self.imu_callback_rawdata, 10)
+        # Subscribe to the raw IMU data topic : gyr/acc + mag
+        self.get_gyr_raw = self.create_subscription(Imu, "/imu/gyr_raw", self.gyr_callback_rawdata, 10) 
+        self.get_mag_raw = self.create_subscription(MagneticField, "/imu/mag_raw", self.mag_callback_rawdata, 10)
 
         self.package_path = get_package_share_directory('imu_processing')       # Find imu_processing pkg  
         self.calibration_path = os.path.join(self.package_path, 'calibration')  # Find calibration folder with bias inside
@@ -31,7 +33,6 @@ class imu_cal_live(Node):
 
 
         
-
 
     def open_bias(self):
         bias_file = os.path.join(self.calibration_path, bias_file.csv)          # Find the file with bias constants
@@ -49,7 +50,7 @@ class imu_cal_live(Node):
             self.gyro_bias_z = float(bias_const['gyro_bias_z'])
 
 
-    def imu_callback_rawdata(self,msg):  # Runs everytime a msg arrives
+    def gyr_callback_rawdata(self,msg):  # Runs everytime a msg arrives
         # Time data
         current_time = self.get_clock().now() 
         elapsed_time = ( current_time - self.start_time ).nanoseconds / 1e9
@@ -64,6 +65,12 @@ class imu_cal_live(Node):
         self.gyro_x.append(msg.angular_velocity.x)
         self.gyro_y.append(msg.angular_velocity.y)
         self.gyro_z.append(msg.angular_velocity.z)
+
+    def mag_callback_rawdata(self,msg):  # Runs everytime a msg arrives
+        # Store magnetometer data
+        self.mag_x.append(msg.magnetic_field.x)
+        self.mag_y.append(msg.magnetic_field.y)
+        self.mag_z.append(msg.magnetic_field.z)
 
     def calibrate_rawdata (self):
         self.cal_accel_x.append

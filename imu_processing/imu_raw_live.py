@@ -24,8 +24,8 @@ class imu_processing_raw(Node, ImuPubPlotFuncs):
         self.imu = ICM20948(i2c_addr=addr, i2c_bus=SMBus(bus))
 
 
-        self.imu_pub = self.create_publisher(Imu,"/imu/data_raw",10)      # ROS 2 publisher
-        self.mag_pub = self.create_publisher(MagneticField, "/imu/mag", 10)
+        self.gyr_pub = self.create_publisher(Imu,"/imu/gyr_raw",10)      # ROS 2 publisher
+        self.mag_pub = self.create_publisher(MagneticField, "/imu/mag_raw", 10)
         # Publish at 100 Hz while data is collected at 125hz
         self.timer = self.create_timer(0.01, self.publish_imu)
 
@@ -46,7 +46,7 @@ class imu_processing_raw(Node, ImuPubPlotFuncs):
         # # We are not calculating orientation yet
         imu_msg.orientation_covariance[0] = -1.0
 
-        self.imu_pub.publish(imu_msg)
+        self.gyr_pub.publish(imu_msg)
         self.mag_pub.publish(mag_msg)
 
         a_raw = imu_msg.linear_acceleration

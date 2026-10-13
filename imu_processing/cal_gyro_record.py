@@ -1,20 +1,24 @@
+#!/usr/bin/env python3
+
 import csv
+import os
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 from sensor_msgs.msg import Imu
 
 from ament_index_python.packages import get_package_share_directory
-import os
+
 
 # SAVES FILES AS 2 CSV
-# 1: THE WHOLE DATA SET FOR STATIONARY TESTING
+# 1: THE WHOLE DATA SET FOR STATIONARY TESTING - just lay IMU flat and record for 20 seconds
 # 2: THE AVG BIAS FOUND
 
-class imu_stationary_record(Node):
+class cal_gyro_record(Node):
 
     def __init__(self):
-        super().__init__('calibration_stationary_data')
+        super().__init__('cal_gyro_stationary')
 
         # Create file to store the reference data
         self.store_imu_stationary_data()
@@ -32,7 +36,7 @@ class imu_stationary_record(Node):
         self.sample_count = 0
 
         # Subscribe to raw IMU data
-        self.subscription = self.create_subscription(Imu,'/imu/data_raw',self.imu_callback,10)
+        self.get_gyr_cal = self.create_subscription(Imu,'/imu/gyr_raw_cal',self.gyr_callback,10)
 
         # Publish data as stationary data
         # self.publisher = self.create_publisher(Imu,"/imu/stationary_data",10)
@@ -44,10 +48,10 @@ class imu_stationary_record(Node):
     def store_imu_stationary_data(self):
 
         self.package_path = get_package_share_directory('imu_processing')           # Find the ROS 2 package location
-        self.calibration_path = os.path.join( self.package_path, 'calibration' )    # Create calibration folder path 
+        self.calibration_path = os.path.join( self.package_path, 'gyr_cal' )    # Create calibration folder path 
         os.makedirs(self.calibration_path, exist_ok=True)                           # Create the folder if it does not exist 
  
-        self.file_path = os.path.join( self.calibration_path, 'imu_reference_stationary.csv' )      # File to store the WHOLE reference data
+        self.file_path = os.path.join( self.calibration_path, 'gyr_cal_record.csv' )      # File to store the WHOLE reference data
         self.file = open( self.file_path, 'w', newline='' )                                         # Open the CSV file 
         self.writer = csv.writer(self.file)                                                         # Write the file as CSV
 
@@ -64,7 +68,7 @@ class imu_stationary_record(Node):
 
         return
 
-    def imu_callback(self, msg):
+    def gyr_callback(self, msg):
 
         # Get timestamp
         time = (
@@ -108,6 +112,7 @@ class imu_stationary_record(Node):
         # Make sure data is immediately written to the file
         self.file.flush()
 
+
     def calculate_bias(self):
 
         if self.sample_count == 0:
@@ -128,21 +133,21 @@ class imu_stationary_record(Node):
 
         # Print results
         self.get_logger().info("========== CALIBRATION RESULTS ==========")
-        self.get_logger().info("Samples collected: " + self.sample_count)
+        self.get_logger().info(f"Samples collected: {self.sample_count}")
 
-        self.get_logger().info("Gyro bias X: " + gyro_bias_x)
-        self.get_logger().info("Gyro bias Y: " + gyro_bias_y)
-        self.get_logger().info("Gyro bias Z: " + gyro_bias_z)
+        self.get_logger().info(f"Gyro bias X: {gyro_bias_x:.6f} rad/s")
+        self.get_logger().info(f"Gyro bias Y: {gyro_bias_y:.6f} rad/s")
+        self.get_logger().info(f"Gyro bias Z: {gyro_bias_z:.6f} rad/s")
 
-        self.get_logger().info("Accelerometer average X: " + accel_average_x)
-        self.get_logger().info("Accelerometer average Y: " + accel_average_y)
-        self.get_logger().info("Accelerometer average Z: " + accel_average_z)
+        self.get_logger().info(f"Accelerometer average X: {accel_average_x:.4f} m/s^2")
+        self.get_logger().info(f"Accelerometer average Y: {accel_average_y:.4f} m/s^2")
+        self.get_logger().info(f"Accelerometer average Z: {accel_average_z:.4f} m/s^2")
 
         self.get_logger().info("==========================================")
 
 
         # Save calibration values
-        bias_file = os.path.join( self.calibration_path,'bias_file.csv')       # Create new csv @ same path
+        bias_file = os.path.join( self.calibration_path,'bias_file_gyro.csv')       # Create new csv @ same path
 
         # Write bias into a file
         with open(bias_file, 'w', newline='') as file:      # Create new file if no file exists 
@@ -173,32 +178,28 @@ class imu_stationary_record(Node):
 
     def destroy_node(self):
 
-        # Calculate bias before closing
-        self.calculate_bias()
-
-        # Close the CSV file
-        self.file.close()
-
-        self.get_logger().info(
-            "Reference data saved."
-        )
-
-        super().destroy_node()
+        try:
+            self.calculate_bias()                   # Calculate bias before closing
+        finally:
+            self.file.close()                       # Always close the CSV file
+            self.get_logger().info("Reference data saved.")
+            super().destroy_node()
 
 
 def main(args=None):
 
     rclpy.init(args=args)
 
-    node = imu_stationary_record()
+    node = cal_gyro_record()
 
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass                                        # Ctrl+C: normal way to stop recording
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():                              # Ctrl+C may already have shut ROS down
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
