@@ -31,7 +31,7 @@ class imu_processing_raw(Node, ImuPubPlotFuncs):
 
         self.print_count = 0
 
-        # self.frame_id = "imu_link"      # Coordinate frame the IMU data is measured in - I dont see where this is used in the code, but it is a standard ROS 2 parameter for IMU data
+        self.frame_id = "imu_link"      # Required by ImuPubPlotFuncs.read_imu_data() for message headers
 
         self.start_time = self.get_clock().now()
         self.plots = []

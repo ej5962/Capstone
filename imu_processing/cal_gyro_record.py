@@ -8,7 +8,6 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from sensor_msgs.msg import Imu
 
-from ament_index_python.packages import get_package_share_directory
 
 
 # SAVES FILES AS 2 CSV
@@ -47,8 +46,8 @@ class cal_gyro_record(Node):
 
     def store_imu_stationary_data(self):
 
-        self.package_path = get_package_share_directory('imu_processing')           # Find the ROS 2 package location
-        self.calibration_path = os.path.join( self.package_path, 'gyr_cal' )    # Create calibration folder path 
+        self.declare_parameter('calibration_dir', os.path.expanduser('~/imu_calibration'))
+        self.calibration_path = self.get_parameter('calibration_dir').value
         os.makedirs(self.calibration_path, exist_ok=True)                           # Create the folder if it does not exist 
  
         self.file_path = os.path.join( self.calibration_path, 'gyr_cal_record.csv' )      # File to store the WHOLE reference data

@@ -9,7 +9,6 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu, MagneticField
 
-from ament_index_python.packages import get_package_share_directory
 
 
 class imu_cal_live(Node):
@@ -21,8 +20,8 @@ class imu_cal_live(Node):
         self.get_gyr_raw = self.create_subscription(Imu, "/imu/gyr_raw", self.gyr_callback_rawdata, 10) 
         self.get_mag_raw = self.create_subscription(MagneticField, "/imu/mag_raw", self.mag_callback_rawdata, 10)
 
-        self.package_path = get_package_share_directory('imu_processing')       # Find imu_processing pkg  
-        self.calibration_path = os.path.join(self.package_path, 'calibration')  # Find calibration folder with bias inside
+        self.declare_parameter('calibration_dir', os.path.expanduser('~/imu_calibration'))
+        self.calibration_path = self.get_parameter('calibration_dir').value                 # Find calibration folder with bias inside
 
         self.open_bias()        # Open previously recorded bias files
 
@@ -35,7 +34,7 @@ class imu_cal_live(Node):
         
 
     def open_bias(self):
-        bias_file = os.path.join(self.calibration_path, bias_file.csv)          # Find the file with bias constants
+        bias_file = os.path.join(self.calibration_path, 'bias_file_gyro.csv')      # Find the file with bias constants
         with open(bias_file, 'r') as file:
             reader = csv.DictReader(file)
 
