@@ -6,18 +6,23 @@ import os
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rclpy.signals import SignalHandlerOptions
 from sensor_msgs.msg import Imu
 
 
 
 # SAVES FILES AS 2 CSV
-# 1: THE WHOLE DATA SET FOR STATIONARY TESTING - just lay IMU flat and record for 20 seconds
-# 2: THE AVG BIAS FOUND
+# 1: THE WHOLE DATA SET FOR STATIONARY TESTING - keep IMU still, record 60-90 s, stop with Ctrl+C
+# 2: THE AVG BIAS FOUND (only written if at least min_samples were collected)
 
 class cal_gyro_record(Node):
 
     def __init__(self):
         super().__init__('cal_gyro_stationary')
+
+        # Minimum samples needed before the bias file is overwritten (~30 s at 33 Hz)
+        self.declare_parameter('min_samples', 1000)
+        self.min_samples = int(self.get_parameter('min_samples').value)
 
         # Create file to store the reference data
         self.store_imu_stationary_data()
@@ -34,25 +39,22 @@ class cal_gyro_record(Node):
         # Number of measurements received
         self.sample_count = 0
 
-        # Subscribe to raw IMU data
-        self.get_gyr_cal = self.create_subscription(Imu,'/imu/gyr_raw_cal',self.gyr_callback,10)
-
-        # Publish data as stationary data
-        # self.publisher = self.create_publisher(Imu,"/imu/stationary_data",10)
+        # Subscribe to raw (uncalibrated) IMU data
+        self.get_gyr_raw = self.create_subscription(Imu, '/imu/gyr_raw', self.gyr_callback, 10)
 
         self.get_logger().info("Collecting stationary IMU data...")
         self.get_logger().info(f"Saving data to: {self.file_path}")
-        self.get_logger().info("Press Ctrl+C when finished.")
+        self.get_logger().info("Keep the rover still. Press Ctrl+C when finished (aim for 60-90 s).")
 
     def store_imu_stationary_data(self):
 
         self.declare_parameter('calibration_dir', os.path.expanduser('~/imu_calibration'))
         self.calibration_path = self.get_parameter('calibration_dir').value
-        os.makedirs(self.calibration_path, exist_ok=True)                           # Create the folder if it does not exist 
- 
-        self.file_path = os.path.join( self.calibration_path, 'gyr_cal_record.csv' )      # File to store the WHOLE reference data
-        self.file = open( self.file_path, 'w', newline='' )                                         # Open the CSV file 
-        self.writer = csv.writer(self.file)                                                         # Write the file as CSV
+        os.makedirs(self.calibration_path, exist_ok=True)                           # Create the folder if it does not exist
+
+        self.file_path = os.path.join(self.calibration_path, 'gyr_cal_record.csv')  # File to store the WHOLE reference data
+        self.file = open(self.file_path, 'w', newline='')                           # Open the CSV file
+        self.writer = csv.writer(self.file)                                         # Write the file as CSV
 
         # Write column headings
         self.writer.writerow([
@@ -64,8 +66,6 @@ class cal_gyro_record(Node):
             'accel_y',
             'accel_z'
         ])
-
-        return
 
     def gyr_callback(self, msg):
 
@@ -111,24 +111,21 @@ class cal_gyro_record(Node):
         # Make sure data is immediately written to the file
         self.file.flush()
 
-
     def calculate_bias(self):
 
         if self.sample_count == 0:
-            self.get_logger().error(
-                "No IMU data was received."
-            )
+            self.get_logger().error("No IMU data was received.")
             return
 
         # Calculate gyro averages
-        gyro_bias_x = ( self.gyro_x_total / self.sample_count)
-        gyro_bias_y = ( self.gyro_y_total / self.sample_count)
-        gyro_bias_z = (self.gyro_z_total / self.sample_count)
+        gyro_bias_x = self.gyro_x_total / self.sample_count
+        gyro_bias_y = self.gyro_y_total / self.sample_count
+        gyro_bias_z = self.gyro_z_total / self.sample_count
 
         # Calculate accelerometer averages
-        accel_average_x = (self.accel_x_total / self.sample_count)
-        accel_average_y = (self.accel_y_total / self.sample_count)
-        accel_average_z = (self.accel_z_total / self.sample_count)
+        accel_average_x = self.accel_x_total / self.sample_count
+        accel_average_y = self.accel_y_total / self.sample_count
+        accel_average_z = self.accel_z_total / self.sample_count
 
         # Print results
         self.get_logger().info("========== CALIBRATION RESULTS ==========")
@@ -144,12 +141,19 @@ class cal_gyro_record(Node):
 
         self.get_logger().info("==========================================")
 
+        # Don't let a short run overwrite a good calibration
+        if self.sample_count < self.min_samples:
+            self.get_logger().warn(
+                f"Only {self.sample_count} samples (minimum {self.min_samples}). "
+                "bias_file_gyro.csv was NOT updated."
+            )
+            return
 
         # Save calibration values
-        bias_file = os.path.join( self.calibration_path,'bias_file_gyro.csv')       # Create new csv @ same path
+        bias_file = os.path.join(self.calibration_path, 'bias_file_gyro.csv')      # Create new csv @ same path
 
         # Write bias into a file
-        with open(bias_file, 'w', newline='') as file:      # Create new file if no file exists 
+        with open(bias_file, 'w', newline='') as file:                             # Create new file if no file exists
 
             writer = csv.writer(file)
 
@@ -171,9 +175,7 @@ class cal_gyro_record(Node):
                 accel_average_z
             ])
 
-        self.get_logger().info(
-            "Calibration values saved."
-        )
+        self.get_logger().info("Calibration values saved.")
 
     def destroy_node(self):
 
@@ -187,7 +189,8 @@ class cal_gyro_record(Node):
 
 def main(args=None):
 
-    rclpy.init(args=args)
+    # Handle Ctrl+C ourselves so logging still works while results are saved
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
 
     node = cal_gyro_record()
 
@@ -197,8 +200,9 @@ def main(args=None):
         pass                                        # Ctrl+C: normal way to stop recording
     finally:
         node.destroy_node()
-        if rclpy.ok():                              # Ctrl+C may already have shut ROS down
+        if rclpy.ok():
             rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

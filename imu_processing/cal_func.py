@@ -14,3 +14,5 @@ class CalibrateFuncs:
         # Calibrate the gyro data by subtracting the bias from the raw data
         gyro_cal = gyro_raw - gyro_bias
         return gyro_cal
+
+    

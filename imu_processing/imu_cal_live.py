@@ -9,12 +9,16 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu, MagneticField
 
+# Package imports
+from imu_processing.cal_func import CalibrateFuncs
 
 
-class imu_cal_live(Node):
+class imu_cal_live(Node, CalibrateFuncs):
 
     def __init__(self):
         super().__init__("imu_cal")
+
+        self.open_bias()        # Open previously recorded bias files
 
         # Subscribe to the raw IMU data topic : gyr/acc + mag
         self.get_gyr_raw = self.create_subscription(Imu, "/imu/gyr_raw", self.gyr_callback_rawdata, 10) 
@@ -22,8 +26,6 @@ class imu_cal_live(Node):
 
         self.declare_parameter('calibration_dir', os.path.expanduser('~/imu_calibration'))
         self.calibration_path = self.get_parameter('calibration_dir').value                 # Find calibration folder with bias inside
-
-        self.open_bias()        # Open previously recorded bias files
 
         # Setup the subscriber to live data
         self.start_time = self.get_clock().now()
@@ -64,6 +66,11 @@ class imu_cal_live(Node):
         self.gyro_x.append(msg.angular_velocity.x)
         self.gyro_y.append(msg.angular_velocity.y)
         self.gyro_z.append(msg.angular_velocity.z)
+
+        self.gyro_cal_x = self.cal_gyro(self.gyro_x,self.gyro_bias_x)
+        self.gyro_cal_y = self.cal_gyro(self.gyro_y,self.gyro_bias_y)
+        self.gyro_cal_z = self.cal_gyro(self.gyro_z,self.gyro_bias_z)
+        
 
     def mag_callback_rawdata(self,msg):  # Runs everytime a msg arrives
         # Store magnetometer data

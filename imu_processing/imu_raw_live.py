@@ -10,6 +10,9 @@ from icm20948 import ICM20948       # Use the ICM-20948 library to read the IMU 
 # personal library imports
 from imu_processing.imu_pubplot_func import ImuPubPlotFuncs
 
+# TO TURN PLOTS ON : IN TERMINAL RUN
+# ros2 run imu_processing imu_raw_live --ros-args -p enable_plot:=true
+
 class imu_processing_raw(Node, ImuPubPlotFuncs):
 
     def __init__(self):
@@ -35,8 +38,9 @@ class imu_processing_raw(Node, ImuPubPlotFuncs):
 
         self.start_time = self.get_clock().now()
         self.plots = []
-        self.create_plot(type="Raw")  # Create a plot for the raw data
-
+        self.declare_parameter('enable_plot', False)
+        if self.get_parameter('enable_plot').value:
+            self.create_plot(type="Raw")  # Bench use only: plotting blocks the publish timer
         self.get_logger().info("ICM-20948 IMU publisher started")
 
     def publish_imu(self):

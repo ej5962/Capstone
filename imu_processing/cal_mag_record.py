@@ -27,6 +27,9 @@ from rclpy.node import Node
 from sensor_msgs.msg import MagneticField
 
 
+
+
+
 class MagRecorder(Node):
 
     def __init__(self):
@@ -47,7 +50,7 @@ class MagRecorder(Node):
         self.mag_count = 0
 
         # Subscription
-        self.create_subscription(MagneticField, '/imu/mag' , self.mag_callback, 50)
+        self.create_subscription(MagneticField, '/imu/mag_raw' , self.mag_callback, 50)
 
         # Keyboard thread
         self.key_thread = threading.Thread(target=self.keyboard_loop, daemon=True)
