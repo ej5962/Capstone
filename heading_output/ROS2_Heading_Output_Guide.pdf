@@ -1,0 +1,118 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Length 2588 >>
+stream
+q
+0.10 0.28 0.48 rg
+0 832 595 10 re f
+Q
+0.08 0.22 0.38 rg BT /F2 22 Tf 52 794 Td (ROS 2 Heading Output Guide) Tj ET
+0.25 0.32 0.40 rg BT /F1 11 Tf 52 762 Td (Live gyro, magnetometer, and Kalman-filtered headings) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 729 Td (What this guide runs) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 708 Td (The Kalman-filtered heading is calculated by heading_live and published on) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 694 Td (/imu/heading_kalman \(std_msgs/msg/Float64, radians\). print_headings subscribes to it, prints) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 680 Td (it in the terminal, and plots it with the gyro and magnetometer headings.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 659 Td (Before starting) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 638 Td (- Use a ROS 2 Linux / WSL terminal with the package in a colcon workspace.) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 622 Td (- Connect the IMU and make sure its configured I2C bus is available.) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 606 Td (- Have both calibration files ready in ~/imu_calibration/:) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 590 Td (bias_file_gyro.csv) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 573 Td (mag_calibration.csv) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 556 Td (If calibration files are missing, first follow the IMU calibration instructions in the) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 542 Td (project README. Keep the rover stationary while recording gyro bias.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 521 Td (Build the package once) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 500 Td (Open a terminal at the colcon workspace root \(the folder containing src/\). Replace) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 486 Td (<ros_distro> with your installed ROS 2 distribution, such as humble or jazzy.) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 468 Td (source /opt/ros/<ros_distro>/setup.bash) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 451 Td (colcon build --packages-select imu_processing) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 434 Td (source install/setup.bash) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 417 Td (Open four terminals for the four nodes below. In each new terminal, source ROS and the) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 403 Td (workspace overlay before running its command:) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 385 Td (source /opt/ros/<ros_distro>/setup.bash) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 368 Td (cd <workspace_root>) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 351 Td (source install/setup.bash) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 498 25 Td (Page 1) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 3488 >>
+stream
+q
+0.10 0.28 0.48 rg
+0 832 595 10 re f
+Q
+0.08 0.22 0.38 rg BT /F2 22 Tf 52 794 Td (Run the live heading pipeline) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 759 Td (Terminal 1 - raw IMU publisher) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 738 Td (ros2 run imu_processing imu_raw_live) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 721 Td (This reads the ICM-20948 and publishes /imu/gyr_raw and /imu/mag_raw. Keep this terminal) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 707 Td (running.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 686 Td (Terminal 2 - calibration node) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 665 Td (ros2 run imu_processing imu_cal_live) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 648 Td (This subscribes to the raw topics and publishes /imu/gyr_cal and /imu/mag_cal using the two) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 634 Td (calibration files.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 613 Td (Terminal 3 - heading and Kalman filter) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 592 Td (ros2 run imu_processing heading_live) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 575 Td (This publishes /imu/heading/gyro, /imu/heading/mag, and the fused /imu/heading_kalman.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 554 Td (Terminal 4 - print and plot) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 533 Td (ros2 run imu_processing print_headings) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 516 Td (The terminal prints the latest headings about five times per second. The plot is enabled by) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 502 Td (default and shows radians in the range [-pi, pi]. Keep this process running to see live) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 488 Td (updates.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 467 Td (Expected terminal output) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 446 Td (gyro_head: 0.123456, mag_head: 0.130000, kalman_head: 0.127891) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 429 Td (Values are in radians. At startup, a field may show waiting until its first message arrives.) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 415 Td (The Kalman estimate starts from the first magnetometer heading, then combines gyro) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 401 Td (prediction with magnetometer corrections.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 380 Td (Check topics if there is no output) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 359 Td (ros2 topic list | grep /imu) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 342 Td (ros2 topic echo /imu/heading_kalman) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 325 Td (Confirm all four nodes are running in terminals on the same ROS_DOMAIN_ID and that each) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 311 Td (terminal sourced the same ROS distribution and workspace.) Tj ET
+0.08 0.32 0.50 rg BT /F2 13 Tf 52 290 Td (No graphical display available?) Tj ET
+0.08 0.20 0.30 rg BT /F3 9 Tf 52 269 Td (ros2 run imu_processing print_headings --ros-args -p enable_plot:=false) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 252 Td (This disables the matplotlib window but keeps terminal output. If a node cannot find a) Tj ET
+0.12 0.16 0.20 rg BT /F1 10 Tf 52 238 Td (calibration file, check ~/imu_calibration and the calibration_dir parameter.) Tj ET
+0.30 0.30 0.30 rg BT /F1 8 Tf 52 216 Td (The magnetometer heading uses horizontal-plane atan2 and is not tilt compensated. For accurate) Tj ET
+0.30 0.30 0.30 rg BT /F1 8 Tf 52 205 Td (heading, keep the rover level and verify sensor-axis alignment and calibration.) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 498 25 Td (Page 2) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000197 00000 n 
+0000000272 00000 n 
+0000000340 00000 n 
+0000002980 00000 n 
+0000003126 00000 n 
+0000006666 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+6812
+%%EOF

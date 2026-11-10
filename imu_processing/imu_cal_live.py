@@ -1,107 +1,177 @@
 #!/usr/bin/env python3
+"""Apply saved gyro and magnetometer calibrations to live IMU messages."""
 
-import math
 import csv
 import os
 
-import imu_raw_live
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu, MagneticField
 
-# Package imports
-from imu_processing.cal_func import CalibrateFuncs
 
-
-class imu_cal_live(Node, CalibrateFuncs):
-
+class ImuCalLive(Node):
     def __init__(self):
         super().__init__("imu_cal")
 
-        self.open_bias()        # Open previously recorded bias files
+        self.declare_parameter(
+            "calibration_dir", os.path.expanduser("~/imu_calibration")
+        )
+        self.calibration_path = self.get_parameter("calibration_dir").value
+        self.load_gyro_biases()
+        self.load_mag_calibration()
 
-        # Subscribe to the raw IMU data topic : gyr/acc + mag
-        self.get_gyr_raw = self.create_subscription(Imu, "/imu/gyr_raw", self.gyr_callback_rawdata, 10) 
-        self.get_mag_raw = self.create_subscription(MagneticField, "/imu/mag_raw", self.mag_callback_rawdata, 10)
+        self.gyr_pub = self.create_publisher(Imu, "/imu/gyr_cal", 10)
+        self.mag_pub = self.create_publisher(MagneticField, "/imu/mag_cal", 10)
+        self.gyr_sub = self.create_subscription(
+            Imu, "/imu/gyr_raw", self.gyr_callback_rawdata, 10
+        )
+        self.mag_sub = self.create_subscription(
+            MagneticField, "/imu/mag_raw", self.mag_callback_rawdata, 10
+        )
 
-        self.declare_parameter('calibration_dir', os.path.expanduser('~/imu_calibration'))
-        self.calibration_path = self.get_parameter('calibration_dir').value                 # Find calibration folder with bias inside
+        self.get_logger().info(
+            "Publishing calibrated gyro on /imu/gyr_cal and calibrated "
+            "magnetometer data on /imu/mag_cal. Accelerometer values remain "
+            "unchanged."
+        )
 
-        # Setup the subscriber to live data
-        self.start_time = self.get_clock().now()
+    def load_gyro_biases(self):
+        bias_file = os.path.join(self.calibration_path, "bias_file_gyro.csv")
+        try:
+            with open(bias_file, newline="") as file:
+                reader = csv.DictReader(file)
+                row = next(reader, None)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Unable to read calibration file {bias_file}: {exc}"
+            ) from exc
 
-        # Collect + calibrate raw data
+        required_fields = (
+            "gyro_bias_x",
+            "gyro_bias_y",
+            "gyro_bias_z",
+        )
+        if row is None or any(field not in row for field in required_fields):
+            raise ValueError(
+                f"{bias_file} must contain a header and values for "
+                f"{', '.join(required_fields)}"
+            )
 
+        try:
+            self.gyro_bias_x = float(row["gyro_bias_x"])
+            self.gyro_bias_y = float(row["gyro_bias_y"])
+            self.gyro_bias_z = float(row["gyro_bias_z"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid gyro bias values in {bias_file}") from exc
 
-        
+    def load_mag_calibration(self):
+        calibration_file = os.path.join(
+            self.calibration_path, "mag_calibration.csv"
+        )
+        matrix_fields = tuple(
+            f"matrix_{row}{column}"
+            for row in range(3)
+            for column in range(3)
+        )
+        required_fields = (
+            "offset_x",
+            "offset_y",
+            "offset_z",
+            *matrix_fields,
+        )
+        try:
+            with open(calibration_file, newline="") as file:
+                reader = csv.DictReader(file)
+                row = next(reader, None)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Unable to read magnetometer calibration file "
+                f"{calibration_file}: {exc}"
+            ) from exc
 
-    def open_bias(self):
-        bias_file = os.path.join(self.calibration_path, 'bias_file_gyro.csv')      # Find the file with bias constants
-        with open(bias_file, 'r') as file:
-            reader = csv.DictReader(file)
+        if row is None or any(field not in row for field in required_fields):
+            raise ValueError(
+                f"{calibration_file} must contain a header and values for "
+                f"{', '.join(required_fields)}"
+            )
 
-            bias_const = next(reader)
+        try:
+            self.mag_offset = tuple(
+                float(row[f"offset_{axis}"]) for axis in "xyz"
+            )
+            self.mag_matrix = tuple(
+                tuple(
+                    float(row[f"matrix_{i}{j}"])
+                    for j in range(3)
+                )
+                for i in range(3)
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"Invalid magnetometer calibration values in {calibration_file}"
+            ) from exc
 
-            self.accel_bias_x = float(bias_const['accel_average_x,'])
-            self.accel_bias_y = float(bias_const['accel_average_y'])
-            self.accel_bias_z = float(bias_const['accel_average_z'])
+    def gyr_callback_rawdata(self, msg):
+        calibrated = Imu()
+        calibrated.header = msg.header
+        calibrated.orientation = msg.orientation
+        calibrated.orientation_covariance = msg.orientation_covariance
+        calibrated.linear_acceleration = msg.linear_acceleration
+        calibrated.linear_acceleration_covariance = msg.linear_acceleration_covariance
+        calibrated.angular_velocity_covariance = msg.angular_velocity_covariance
 
-            self.gyro_bias_x = float(bias_const['gyro_bias_x'])
-            self.gyro_bias_y = float(bias_const['gyro_bias_y'])
-            self.gyro_bias_z = float(bias_const['gyro_bias_z'])
+        calibrated.angular_velocity.x = msg.angular_velocity.x - self.gyro_bias_x
+        calibrated.angular_velocity.y = msg.angular_velocity.y - self.gyro_bias_y
+        calibrated.angular_velocity.z = msg.angular_velocity.z - self.gyro_bias_z
+        self.gyr_pub.publish(calibrated)
 
+    def mag_callback_rawdata(self, msg):
+        # Center the field before applying the fitted soft-iron correction.
+        raw = msg.magnetic_field
+        centered = (
+            raw.x - self.mag_offset[0],
+            raw.y - self.mag_offset[1],
+            raw.z - self.mag_offset[2],
+        )
+        calibrated = MagneticField()
+        calibrated.header = msg.header
+        # Propagate sensor uncertainty through the same linear correction.
+        calibrated.magnetic_field_covariance = [
+            sum(
+                self.mag_matrix[row][i]
+                * msg.magnetic_field_covariance[i * 3 + j]
+                * self.mag_matrix[column][j]
+                for i in range(3)
+                for j in range(3)
+            )
+            for row in range(3)
+            for column in range(3)
+        ]
+        calibrated.magnetic_field.x = sum(
+            self.mag_matrix[0][i] * centered[i] for i in range(3)
+        )
+        calibrated.magnetic_field.y = sum(
+            self.mag_matrix[1][i] * centered[i] for i in range(3)
+        )
+        calibrated.magnetic_field.z = sum(
+            self.mag_matrix[2][i] * centered[i] for i in range(3)
+        )
+        self.mag_pub.publish(calibrated)
 
-    def gyr_callback_rawdata(self,msg):  # Runs everytime a msg arrives
-        # Time data
-        current_time = self.get_clock().now() 
-        elapsed_time = ( current_time - self.start_time ).nanoseconds / 1e9
-        self.time_data.append(elapsed_time)
-
-        # Store accelerometer data
-        self.accel_x.append( msg.linear_acceleration.x )
-        self.accel_y.append( msg.linear_acceleration.y )
-        self.accel_z.append( msg.linear_acceleration.z )
-
-        # Store gyro data
-        self.gyro_x.append(msg.angular_velocity.x)
-        self.gyro_y.append(msg.angular_velocity.y)
-        self.gyro_z.append(msg.angular_velocity.z)
-
-        self.gyro_cal_x = self.cal_gyro(self.gyro_x,self.gyro_bias_x)
-        self.gyro_cal_y = self.cal_gyro(self.gyro_y,self.gyro_bias_y)
-        self.gyro_cal_z = self.cal_gyro(self.gyro_z,self.gyro_bias_z)
-        
-
-    def mag_callback_rawdata(self,msg):  # Runs everytime a msg arrives
-        # Store magnetometer data
-        self.mag_x.append(msg.magnetic_field.x)
-        self.mag_y.append(msg.magnetic_field.y)
-        self.mag_z.append(msg.magnetic_field.z)
-
-    def calibrate_rawdata (self):
-        self.cal_accel_x.append
-                
-        
 
 def main(args=None):
-
-    # Initialise ROS 2
     rclpy.init(args=args)
-
-    # Create node
-    node = imu_raw_live()
-
+    node = None
     try:
-        # Keep node running
+        node = ImuCalLive()
         rclpy.spin(node)
-
     except KeyboardInterrupt:
         pass
-
     finally:
-        # Clean up
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

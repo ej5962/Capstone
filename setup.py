@@ -26,8 +26,12 @@ setup(
         'console_scripts': [
             'imu_raw_live = imu_processing.imu_raw_live:main',
             'imu_cal_live = imu_processing.imu_cal_live:main',
-            'cal_gyro_record = imu_processing.cal_gyro_record:main',
-            'cal_mag_record = imu_processing.cal_mag_record:main',
+            'cal_gyro_record = imu_cal.cal_gyro_record:main',
+            'cal_mag_record = imu_cal.cal_mag_record:main',
+            'calibrate_mag = imu_cal.calibrate_mag:main',
+            'heading_live = heading_output.heading_live:main',
+            'print_headings = heading_output.print_headings:main',
+            'gps_live = gps_rtk.gps_live:main',
         ],
     },
 )
