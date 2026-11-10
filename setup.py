@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'imu_raw_live = imu_processing.imu_raw_live:main',
             'imu_cal_live = imu_processing.imu_cal_live:main',
+            'imu_plot_live = imu_processing.imu_plot_live:main',
             'cal_gyro_record = imu_cal.cal_gyro_record:main',
             'cal_mag_record = imu_cal.cal_mag_record:main',
             'calibrate_mag = imu_cal.calibrate_mag:main',

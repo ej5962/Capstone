@@ -78,7 +78,8 @@ def main(args=None):
         # Clean up
         node.close_plots()
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

@@ -35,6 +35,6 @@ relative yaw, not an absolute north-referenced heading unless the sensor axes,
 magnetic declination, and calibration are configured for that interpretation.
 
 `print_headings` prints the latest three values and opens a live plot by
-default. The plot keeps the most recent 1000 samples per heading. Disable it
+default. The plot shows the last 30 seconds (`plot_window_s`). Disable it
 with `--ros-args -p enable_plot:=false` when running without a graphical
 display. Matplotlib is required when plotting is enabled.

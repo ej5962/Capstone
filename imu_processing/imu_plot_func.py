@@ -1,5 +1,10 @@
-import matplotlib.pyplot as plt
+import signal
+import threading
 from collections import deque
+
+import matplotlib.pyplot as plt
+import rclpy
+from rclpy.executors import SingleThreadedExecutor
 
 
 class ImuPlotFunc:
@@ -50,3 +55,31 @@ class ImuPlotFunc:
 
     def close(self):
         plt.close(self.fig)
+
+
+def spin_with_plots(node, redraw, rate_hz=10.0):
+    """Spin a node in the background and redraw plots in the main thread.
+
+    matplotlib must own the main thread to stay responsive. Call
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO) first: rclpy's
+    own Ctrl+C handler raises inside Tk callbacks and leaves plt.pause() stuck.
+    Returns when Ctrl+C is pressed or every plot window is closed.
+    """
+    stop = threading.Event()
+    signal.signal(signal.SIGINT, lambda *_: stop.set())
+    signal.signal(signal.SIGTERM, lambda *_: stop.set())
+
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    spin_thread = threading.Thread(target=executor.spin, daemon=True)
+    spin_thread.start()
+    try:
+        while not stop.is_set() and rclpy.ok() and plt.get_fignums():
+            redraw()
+            # Process window events until the next frame. Not plt.pause(): it
+            # forces a full redraw of the figure every call, which is slow
+            plt.figure(plt.get_fignums()[0]).canvas.start_event_loop(1.0 / rate_hz)
+    finally:
+        executor.shutdown(timeout_sec=1.0)
+        spin_thread.join(timeout=1.0)
+
